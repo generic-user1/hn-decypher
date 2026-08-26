@@ -1,0 +1,12 @@
+[package]
+name = "hn-decypher"
+authors = ["generic-user1"]
+description = "Decrypts the \"dec\" file format from the video game Hacknet"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/generic-user1/hn-decypher"
+categories = ["command-line-utilities", "games"]
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
