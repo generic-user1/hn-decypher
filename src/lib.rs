@@ -1,2 +1,3 @@
-mod decrypt;
-pub use decrypt::{DecryptError, decrypt};
+pub mod decrypt;
+
+pub mod headers;
