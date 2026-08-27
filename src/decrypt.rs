@@ -4,12 +4,12 @@ use thiserror::Error;
 
 /// Reasons decryption can fail
 #[derive(Error, Debug)]
-pub enum DecryptError<'a> {
+pub enum DecryptError {
     /// Failed to parse some value in the input string as an integer
     ///
     /// Contains the erroring substring and the underlying [ParseIntError]
     #[error("value '{0}' could not be parsed as an i32")]
-    ParseIntError(&'a str, #[source] ParseIntError),
+    ParseIntError(String, #[source] ParseIntError),
 
     /// Failed to convert decoded value from i32 to u32
     ///
@@ -29,12 +29,12 @@ pub enum DecryptError<'a> {
     CharConversionError(u32)
 }
 
-impl<'a> From<(&'a str, ParseIntError)> for DecryptError<'a> {
-    fn from(value: (&'a str, ParseIntError)) -> Self {
-        DecryptError::ParseIntError(value.0, value.1)
+impl From<(&str, ParseIntError)> for DecryptError {
+    fn from(value: (&str, ParseIntError)) -> Self {
+        DecryptError::ParseIntError(value.0.to_owned(), value.1)
     }
 }
-impl<'a> From<(i32, i32, TryFromIntError)> for DecryptError<'a> {
+impl From<(i32, i32, TryFromIntError)> for DecryptError {
     fn from(value: (i32, i32, TryFromIntError)) -> Self {
         DecryptError::UnsignedConversionError {
             encoded: value.0,
@@ -48,12 +48,12 @@ impl<'a> From<(i32, i32, TryFromIntError)> for DecryptError<'a> {
 ///
 /// This is more or less a direct translation from the game's own "Decypher_Test.cs"
 /// file (found on "DEC Solutions Mainframe" under "Staff/J.Scott", saved as "Decypher_Test.dec")
-pub fn decrypt<'a>(data: &'a str, passcode: u16) -> Result<String, DecryptError<'a>> {
+pub fn decrypt(data: &str, passcode: u16) -> Result<String, DecryptError> {
     const HALFMAX: i32 = (u16::MAX / 2) as i32;
     let passcode = passcode as i32;
 
     let mut out = Vec::new();
-    for current_char in data.split_whitespace() {
+    for current_char in data.split_whitespace().filter(|&c| !c.is_empty()) {
         let as_int = current_char.parse::<i32>().map_err(|e| (current_char, e))?;
         let new_val = (as_int - HALFMAX - passcode) / 1822;
         let as_u32 = u32::try_from(new_val).map_err(|e| (as_int, new_val, e))?;
