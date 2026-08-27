@@ -28,12 +28,12 @@ impl From<TryFromIntError> for DecryptError {
 ///
 /// This is more or less a direct translation from the game's own "Decypher_Test.cs"
 /// file (found on "DEC Solutions Mainframe" under "Staff/J.Scott", saved as "Decypher_Test.dec")
-pub fn decrypt(data: String, passcode: u16) -> Result<String, DecryptError> {
+pub fn decrypt(data: &str, passcode: u16) -> Result<String, DecryptError> {
     const HALFMAX: i32 = (u16::MAX / 2) as i32;
     let passcode = passcode as i32;
 
     let mut out = Vec::new();
-    for current_char in data.split(&[' ', '\n']) {
+    for current_char in data.split_whitespace() {
         let as_int = current_char.parse::<i32>()?;
         let new_val = (as_int - HALFMAX - passcode) / 1822;
         let as_char = char::from_u32(u32::try_from(new_val)?)
