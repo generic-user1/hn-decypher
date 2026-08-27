@@ -13,7 +13,7 @@ fn main() -> Result<(), Error> {
 
     let encrypted = fs::read_to_string(args.dec_path).map_err(Error::FileRead)?;
     let encrypted_headers = encrypted.split('\n').next().unwrap();
-    let decrypted_headers = decrypt_headers(encrypted_headers, 0)?;
+    let decrypted_headers = decrypt_headers(encrypted_headers)?;
     println!("{:?}", decrypted_headers);
     Ok(())
 }
