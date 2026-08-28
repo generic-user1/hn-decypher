@@ -22,3 +22,5 @@ target
 
 #don't track .dec files themselves
 *.dec
+#don't track the default output file
+out.txt
