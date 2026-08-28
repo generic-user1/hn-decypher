@@ -5,7 +5,7 @@ use crate::decrypt::decrypt;
 pub mod decrypt;
 pub mod headers;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 /// Reasons the process of decrypting a file can fail
 pub enum DecypherError {
     #[error("Missing either headers or body.")]
@@ -18,7 +18,7 @@ pub enum DecypherError {
     DecryptBody(#[from] decrypt::DecryptError)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A decrypted file along with its header values
 pub struct Decyphered {
     pub header_values: headers::HeaderValues,
