@@ -1,7 +1,7 @@
 [package]
 name = "hn-decypher"
 authors = ["generic-user1"]
-description = "Decrypts the \"dec\" file format from the video game Hacknet"
+description = "Decrypts the \"dec\" file format from the video game Hacknet without needing any password"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/generic-user1/hn-decypher"

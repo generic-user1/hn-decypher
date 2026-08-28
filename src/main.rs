@@ -9,7 +9,19 @@ fn main() -> Result<(), Error> {
 
     let encrypted = fs::read_to_string(args.in_path).map_err(Error::FileRead)?;
     let decyphered = decypher_str(&encrypted)?;
-    println!("{:?}", decyphered.header_values);
+    println!("Passcode: {}", decyphered.header_values.passcode);
+    println!("Message: \"{}\"", decyphered.header_values.header_msg);
+    println!("Source IP: \"{}\"", decyphered.header_values.src_ip);
+    println!(
+        "Original File Extension: {}",
+        decyphered
+            .header_values
+            .file_extension
+            .map(|s| format!("\"{}\"", s))
+            .unwrap_or_else(|| "None".to_owned())
+    );
+    println!("Output File: \"{}\"", args.out_path.to_string_lossy());
+
     fs::write(args.out_path, decyphered.body).map_err(Error::FileWrite)?;
     Ok(())
 }
@@ -26,7 +38,7 @@ enum Error {
     DecypherError(#[from] DecypherError)
 }
 
-/// Decrypts the \"dec\" file format from the video game Hacknet
+/// Decrypts the "dec" file format from the video game Hacknet without needing any password
 #[derive(Parser)]
 #[command(version, about)]
 struct Args {

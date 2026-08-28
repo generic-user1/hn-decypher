@@ -7,7 +7,7 @@ use thiserror::Error;
 ///
 /// The passcode isn't stored in the header directly, but
 /// can be brute forced relatively easily.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HeaderValues {
     pub passcode: u16,
     pub header_msg: String,
@@ -16,7 +16,7 @@ pub struct HeaderValues {
 }
 
 /// Reasons decrypting headers can fail
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum HeaderDecryptError {
     #[error("provided header_data had only {0} element(s), expected at least 4")]
     InvalidHeaderLength(usize),
@@ -24,7 +24,7 @@ pub enum HeaderDecryptError {
     #[error("provided header_data did not start with expected prefix \"#DEC_ENC\"")]
     MissingPrefix,
 
-    #[error("failed to determine passcode (all possibilities attempted, none were successful")]
+    #[error("failed to determine passcode (all possibilities attempted, none were successful)")]
     DeterminePasscodeFail,
 
     #[error("provided input str could not be decrypted")]
@@ -34,6 +34,9 @@ pub enum HeaderDecryptError {
 ///The default passcode used by files without a password. Always used for encoding of header fields besides "ENCODED"
 const DEFAULT_PASSCODE: u16 = 4065;
 
+/// Parse and decrypt the headers of a .dec file
+///
+/// `header_data` should be the first line of a .dec file (i.e. everything up to the first newline character)
 pub fn decrypt_headers(header_data: &str) -> Result<HeaderValues, HeaderDecryptError> {
     let header_parts: Vec<_> = header_data.split("::").collect();
 

@@ -3,17 +3,11 @@ use std::num::{ParseIntError, TryFromIntError};
 use thiserror::Error;
 
 /// Reasons decryption can fail
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum DecryptError {
-    /// Failed to parse some value in the input string as an integer
-    ///
-    /// Contains the erroring substring and the underlying [ParseIntError]
     #[error("value '{0}' could not be parsed as an i32")]
     ParseIntError(String, #[source] ParseIntError),
 
-    /// Failed to convert decoded value from i32 to u32
-    ///
-    /// Contains the still-encoded [i32], the decoded [i32], and the underlying [TryFromIntError]
     #[error("value {encoded} when decoded to {decoded} couldn't convert to u32")]
     UnsignedConversionError {
         encoded: i32,
@@ -22,9 +16,6 @@ pub enum DecryptError {
         err: TryFromIntError
     },
 
-    /// Failed to convert the decoded integer to a character
-    ///
-    /// Contains the [u32] that couldn't be decoded
     #[error("value {0} could not be decoded as a utf-8 char")]
     CharConversionError(u32)
 }
