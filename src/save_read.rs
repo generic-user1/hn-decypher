@@ -90,11 +90,19 @@ pub enum ReadAccountsError {
     FileRead(#[from] io::Error),
 
     #[error("a profile in \"Accounts.txt\" was missing a required element")]
-    //TODO: perhaps indicate which specific element?
-    MissingElement,
+    MissingElement(AccountField),
 
     #[error("failed to decrypt password for a profile")]
     PasswordDecrypt(#[from] DecryptError)
+}
+
+#[derive(Debug)]
+/// Account fields that can be missing
+pub enum AccountField {
+    Name,
+    Password,
+    LastUsedDatetime,
+    SaveFileName
 }
 
 /// Read the "Accounts.txt" file to get information on each saved profile
@@ -132,26 +140,32 @@ pub fn read_accounts(save_dir: Option<&Path>) -> Result<Accounts, ReadAccountsEr
         let mut fields = part.split("__");
         let name = fields
             .next()
-            .ok_or(ReadAccountsError::MissingElement)?
+            .ok_or(ReadAccountsError::MissingElement(AccountField::Name))?
             .trim();
         if name.is_empty() {
             //we're at the end of the file
             break;
         }
-        let password_with_header = fields.next().ok_or(ReadAccountsError::MissingElement)?;
+        let password_with_header = fields
+            .next()
+            .ok_or(ReadAccountsError::MissingElement(AccountField::Password))?;
         let last_used_datetime = fields
             .next()
-            .ok_or(ReadAccountsError::MissingElement)?
+            .ok_or(ReadAccountsError::MissingElement(
+                AccountField::LastUsedDatetime
+            ))?
             .trim();
         let save_file_name = fields
             .next()
-            .ok_or(ReadAccountsError::MissingElement)?
+            .ok_or(ReadAccountsError::MissingElement(
+                AccountField::SaveFileName
+            ))?
             .trim();
 
         let encrypted_password = password_with_header
             .split("\n")
             .nth(1)
-            .ok_or(ReadAccountsError::MissingElement)?
+            .ok_or(ReadAccountsError::MissingElement(AccountField::Password))?
             .trim();
 
         let password = decrypt(encrypted_password, DEFAULT_PASSCODE)?;
