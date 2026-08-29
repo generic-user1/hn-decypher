@@ -5,6 +5,7 @@ use std::{
 };
 
 pub mod accounts_file;
+pub mod save_file;
 
 // I only have the game installed on a Windows PC. Default save file locations for
 // other platforms were retreived from https://www.pcgamingwiki.com/wiki/Hacknet#Save_game_data_location
