@@ -1,5 +1,6 @@
 //! Items relating to processing of headers
 
+use crate::DEFAULT_PASSCODE;
 use crate::decrypt::{DecryptError, decrypt};
 use thiserror::Error;
 
@@ -30,9 +31,6 @@ pub enum HeaderDecryptError {
     #[error("provided input str could not be decrypted")]
     DecryptError(#[from] DecryptError)
 }
-
-///The default passcode used by files without a password. Always used for encoding of header fields besides "ENCODED"
-const DEFAULT_PASSCODE: u16 = 4065;
 
 /// Parse and decrypt the headers of a .dec file
 ///

@@ -1,9 +1,11 @@
 use thiserror::Error;
 
-use crate::decrypt::decrypt;
+///The default passcode used by files without a password. Always used for encoding of header fields besides "ENCODED"
+pub const DEFAULT_PASSCODE: u16 = 4065;
 
 pub mod decrypt;
 pub mod headers;
+pub mod save_read;
 
 #[derive(Error, Debug, Clone)]
 /// Reasons the process of decrypting a file can fail
@@ -31,7 +33,7 @@ pub fn decypher_str(file_content: &str) -> Result<Decyphered, DecypherError> {
     let encrypted_body = split.next().ok_or(DecypherError::MissingHeadersOrBody)?;
 
     let header_values = headers::decrypt_headers(encrypted_headers)?;
-    let body = decrypt(encrypted_body, header_values.passcode)?;
+    let body = decrypt::decrypt(encrypted_body, header_values.passcode)?;
     Ok(Decyphered {
         header_values,
         body
