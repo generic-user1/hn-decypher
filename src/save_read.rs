@@ -17,29 +17,40 @@ use crate::{
 // and may or may not be correct.
 #[cfg(target_os = "windows")]
 fn default_save_dir() -> PathBuf {
-    let mut out = PathBuf::from(env::var_os("USERPROFILE").unwrap_or_default());
-    out.push("Documents/My Games/Hacknet/Accounts");
-    out
+    [
+        Path::new(&env::var_os("USERPROFILE").unwrap_or_default()),
+        Path::new("Documents/My Games/Hacknet/Accounts")
+    ]
+    .into_iter()
+    .collect()
 }
 
 #[cfg(target_os = "macos")]
 fn default_save_dir() -> PathBuf {
-    let mut out = PathBuf::from(env::var_os("HOME").unwrap_or_default());
-    out.push("Library/Application Support/Hacknet/Accounts");
-    out
+    [
+        Path::new(&env::var_os("HOME").unwrap_or_default()),
+        Path::new("Library/Application Support/Hacknet/Accounts")
+    ]
+    .into_iter()
+    .collect()
 }
 
 #[cfg(target_os = "linux")]
 fn default_save_dir() -> PathBuf {
-    let mut out = PathBuf::from(env::var_os("$XDG_DATA_HOME").unwrap_or_default());
-    out.push("Hacknet/Accounts");
-    out
+    [
+        Path::new(&env::var_os("$XDG_DATA_HOME").unwrap_or_default()),
+        Path::new("Hacknet/Accounts")
+    ]
+    .into_iter()
+    .collect()
 }
 
-fn accounts_file_path(save_dir: Option<PathBuf>) -> PathBuf {
-    save_dir
-        .unwrap_or_else(default_save_dir)
-        .join(Path::new("Accounts.txt"))
+fn accounts_file_path(save_dir: Option<&Path>) -> PathBuf {
+    if let Some(save_dir) = save_dir {
+        save_dir.join("Accounts.txt")
+    } else {
+        default_save_dir().join("Accounts.txt")
+    }
 }
 
 /// One item from "Accounts.txt"; represents information about one in-game profile
@@ -93,7 +104,7 @@ pub enum ReadAccountsError {
 ///
 /// This function is based on educated guesses about the "Accounts.txt" file's structure.
 /// It may not do the same thing as (or interpret data in the same way as) the actual game when reading the file.
-pub fn read_accounts(save_dir: Option<PathBuf>) -> Result<Accounts, ReadAccountsError> {
+pub fn read_accounts(save_dir: Option<&Path>) -> Result<Accounts, ReadAccountsError> {
     let path = accounts_file_path(save_dir);
     let file_content = fs::read_to_string(path)?;
 
