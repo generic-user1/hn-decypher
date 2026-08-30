@@ -30,7 +30,7 @@ pub enum ComputerFindStrategy<'a, 'input, 'b> {
 }
 impl<'a, 'input, 'b> ComputerFindStrategy<'a, 'input, 'b> {
     ///Determine whether the given `node` matches what we are looking for based on this strategy
-    pub fn matches(&self, node: &Node<'a, 'input>) -> bool {
+    pub fn matches(&self, node: &Node) -> bool {
         if !is_computer(node) {
             false
         } else {
@@ -45,22 +45,22 @@ impl<'a, 'input, 'b> ComputerFindStrategy<'a, 'input, 'b> {
 }
 
 //some convinience functions for identifying noteworthy types of element
-fn is_element_of_type<'a, 'input>(node: &Node<'a, 'input>, tagname: &str) -> bool {
+fn is_element_of_type(node: &Node, tagname: &str) -> bool {
     //not sure if we need to check if it's an element since I beleive it can't have
     //a tag name if it's not an element, but I'd rather be certain it is an element than save
     //whatever (presumably miniscule) amount of time it takes to double check
     node.is_element() && node.has_tag_name(tagname)
 }
-fn is_computer<'a, 'input>(node: &Node<'a, 'input>) -> bool {
+fn is_computer(node: &Node) -> bool {
     is_element_of_type(node, "computer")
 }
-fn is_filesystem<'a, 'input>(node: &Node<'a, 'input>) -> bool {
+fn is_filesystem(node: &Node) -> bool {
     is_element_of_type(node, "filesystem")
 }
-fn is_folder<'a, 'input>(node: &Node<'a, 'input>) -> bool {
+fn is_folder(node: &Node) -> bool {
     is_element_of_type(node, "folder")
 }
-fn is_file<'a, 'input>(node: &Node<'a, 'input>) -> bool {
+fn is_file(node: &Node) -> bool {
     is_element_of_type(node, "file")
 }
 
@@ -141,7 +141,8 @@ impl<'a, 'input, 'b> Computer<'a, 'input> {
     ///   are ignored entirely
     /// - Contiguous seperators (e.g. "//") are treated the same as a single seperator ("/")
     /// - Items are case-sensitive ("This_File_Name" is different from "this_file_name")
-    //TODO: perhaps eliminate case-sensitivity? Autocompletion in-game isn't case sensitive; don't know if file path references themselves are or not.
+    // TODO: perhaps eliminate case-sensitivity? Autocompletion in-game isn't case sensitive; file paths themselves (when fed to commands like `cat`)
+    // *are* case sensitive though
     pub fn file(&self, path: &str) -> Option<Node<'a, 'input>> {
         let mut split = path.split(&['/', '\\']);
 
@@ -175,4 +176,34 @@ impl<'a, 'input, 'b> Computer<'a, 'input> {
     pub fn file_content(&self, path: &str) -> Option<&str> {
         self.file(path).and_then(|f| f.text())
     }
+}
+
+#[derive(Error, Debug)]
+pub enum ReadFileFromSaveError {
+    #[error("failed to parse the save file")]
+    ParseError(#[from] roxmltree::Error),
+
+    #[error("failed to find the target computer")]
+    ComputerError(#[from] ComputerError),
+
+    #[error("file with specified path not found on target computer")]
+    FileNotFound
+}
+
+/// Read the content of a file that belongs to some computer within the specified save file and return it as a string
+///
+/// `save_file` is the string content of one of the game's profile-specific XML save files
+/// `computer_strategy` is a [ComputerFindStrategy] defining how to locate the computer which the file is located on
+/// `target_path` is the path to the file on the target computer
+pub fn read_file_from_save(
+    save_file: &str,
+    computer_strategy: ComputerFindStrategy,
+    target_path: &str
+) -> Result<String, ReadFileFromSaveError> {
+    let parsed = Document::parse(save_file)?;
+    let computer = Computer::try_new(&parsed, computer_strategy)?;
+    computer
+        .file_content(target_path)
+        .ok_or(ReadFileFromSaveError::FileNotFound)
+        .map(|c| c.to_owned())
 }
