@@ -177,33 +177,3 @@ impl<'a, 'input, 'b> Computer<'a, 'input> {
         self.file(path).and_then(|f| f.text())
     }
 }
-
-#[derive(Error, Debug)]
-pub enum ReadFileFromSaveError {
-    #[error("failed to parse the save file")]
-    ParseError(#[from] roxmltree::Error),
-
-    #[error("failed to find the target computer")]
-    ComputerError(#[from] ComputerError),
-
-    #[error("file with specified path not found on target computer")]
-    FileNotFound
-}
-
-/// Read the content of a file that belongs to some computer within the specified save file and return it as a string
-///
-/// `save_file` is the string content of one of the game's profile-specific XML save files
-/// `computer_strategy` is a [ComputerFindStrategy] defining how to locate the computer which the file is located on
-/// `target_path` is the path to the file on the target computer
-pub fn read_file_from_save(
-    save_file: &str,
-    computer_strategy: ComputerFindStrategy,
-    target_path: &str
-) -> Result<String, ReadFileFromSaveError> {
-    let parsed = Document::parse(save_file)?;
-    let computer = Computer::try_new(&parsed, computer_strategy)?;
-    computer
-        .file_content(target_path)
-        .ok_or(ReadFileFromSaveError::FileNotFound)
-        .map(|c| c.to_owned())
-}

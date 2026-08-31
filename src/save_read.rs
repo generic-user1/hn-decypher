@@ -1,11 +1,106 @@
 //! Items related to reading a save file from the game
 use std::{
-    env,
+    env, fs, io,
     path::{Path, PathBuf}
 };
-
+use thiserror::Error;
 pub mod accounts_file;
 pub mod save_file;
+
+/// How to locate the XML save file
+pub enum SaveFindStrategy<'a, 'b> {
+    /// Directly use a path to the XML save file
+    DirectPath(&'a Path),
+
+    /// Locate the XML save file by reading the "Accounts.txt" file
+    /// and identifying what XML file corresponds to the given account name
+    ///
+    /// Requires the path to your save directory and the name of the account in question.
+    /// The save directory defaults to the default save location for your platform,
+    /// and the account name defaults to the last used profile name
+    ByAccount {
+        save_directory: Option<&'a Path>,
+        account_name: Option<&'b str>
+    }
+}
+
+/// Ways locating the XML save file can fail
+#[derive(Error, Debug)]
+pub enum SaveFindError {
+    #[error("Failed to read Accounts.txt file")]
+    ReadAccounts(#[from] accounts_file::ReadAccountsError),
+
+    #[error("No account name was specified, and the Accounts.txt file had no default account")]
+    NoDefaultAccount,
+
+    #[error("Account name '{0}' did not have an entry within the Accounts.txt file")]
+    NonexistentAccount(String)
+}
+
+/// Options for how to read an in-game file from an in-game computer (by reading an XML save file)
+pub struct FileReadOptions<'a, 'input, 'b, 'c> {
+    /// Options for locating your XML save file
+    pub save: SaveFindStrategy<'a, 'b>,
+
+    /// Options for locating the in-game computer within your save file
+    pub computer: save_file::ComputerFindStrategy<'a, 'input, 'b>,
+
+    /// The path to the target file on the in-game computer
+    pub target: &'c str
+}
+
+#[derive(Error, Debug)]
+pub enum ReadFileFromSaveError {
+    #[error("failed to locate the XML save file")]
+    SaveFindError(#[from] SaveFindError),
+
+    #[error("failed to read the XML save file")]
+    ReadError(#[from] io::Error),
+
+    #[error("failed to parse the XML save file")]
+    ParseError(#[from] roxmltree::Error),
+
+    #[error("failed to find the target computer")]
+    ComputerError(#[from] save_file::ComputerError),
+
+    #[error("file with specified path not found on target computer")]
+    FileNotFound
+}
+
+/// Read an in-game file from an in-game computer by reading an XML save file.
+pub fn read_file_from_save(options: FileReadOptions) -> Result<String, ReadFileFromSaveError> {
+    let save_file_content = match options.save {
+        SaveFindStrategy::DirectPath(p) => fs::read_to_string(p)?,
+        SaveFindStrategy::ByAccount {
+            save_directory,
+            account_name
+        } => {
+            let accounts =
+                accounts_file::read_accounts(save_directory).map_err(SaveFindError::from)?;
+            let account_name = account_name
+                .or(accounts.last_used_profile.as_deref())
+                .ok_or(SaveFindError::NoDefaultAccount)?;
+            let account_file_name = &accounts
+                .profiles
+                .get(account_name)
+                .ok_or(SaveFindError::NonexistentAccount(account_name.to_owned()))?
+                .save_file_name;
+            let save_file_path = if let Some(save_directory) = save_directory {
+                save_directory.join(account_file_name)
+            } else {
+                default_save_dir().join(account_file_name)
+            };
+            fs::read_to_string(save_file_path)?
+        }
+    };
+
+    let parsed = roxmltree::Document::parse(&save_file_content)?;
+    let computer = save_file::Computer::try_new(&parsed, options.computer)?;
+    computer
+        .file_content(options.target)
+        .ok_or(ReadFileFromSaveError::FileNotFound)
+        .map(|c| c.to_owned())
+}
 
 // I only have the game installed on a Windows PC. Default save file locations for
 // other platforms were retreived from https://www.pcgamingwiki.com/wiki/Hacknet#Save_game_data_location
