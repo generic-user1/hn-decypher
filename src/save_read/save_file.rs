@@ -44,6 +44,15 @@ impl<'a, 'input, 'b> ComputerFindStrategy<'a, 'input, 'b> {
     }
 }
 
+impl<'a, 'input, 'b> Default for ComputerFindStrategy<'a, 'input, 'b> {
+    /// Returns [ComputerFindStrategy::ById] with the ID set to `"playerComp"`
+    ///
+    /// Put differently, the default [ComputerFindStrategy] is to find the player's in-game computer using its ID.
+    fn default() -> Self {
+        ComputerFindStrategy::ById("playerComp")
+    }
+}
+
 //some convinience functions for identifying noteworthy types of element
 fn is_element_of_type(node: &Node, tagname: &str) -> bool {
     //not sure if we need to check if it's an element since I beleive it can't have

@@ -8,6 +8,7 @@ pub mod accounts_file;
 pub mod save_file;
 
 /// How to locate the XML save file
+#[derive(Debug)]
 pub enum SaveFindStrategy<'a, 'b> {
     /// Directly use a path to the XML save file
     DirectPath(&'a Path),
@@ -17,10 +18,22 @@ pub enum SaveFindStrategy<'a, 'b> {
     ///
     /// Requires the path to your save directory and the name of the account in question.
     /// The save directory defaults to the default save location for your platform,
-    /// and the account name defaults to the last used profile name
+    /// and the account name defaults to the last used account
     ByAccount {
         save_directory: Option<&'a Path>,
         account_name: Option<&'b str>
+    }
+}
+impl<'a, 'b> Default for SaveFindStrategy<'a, 'b> {
+    /// Returns [SaveFindStrategy::ByAccount] with both `save_directory` and `account_name` set to [None]
+    ///
+    /// Put differently, the default [SaveFindStrategy] is to assume the save directory is the default for your platform,
+    /// and to use the last used account
+    fn default() -> Self {
+        SaveFindStrategy::ByAccount {
+            save_directory: None,
+            account_name: None
+        }
     }
 }
 
@@ -38,6 +51,7 @@ pub enum SaveFindError {
 }
 
 /// Options for how to read an in-game file from an in-game computer (by reading an XML save file)
+#[derive(Debug)]
 pub struct FileReadOptions<'a, 'input, 'b, 'c> {
     /// Options for locating your XML save file
     pub save: SaveFindStrategy<'a, 'b>,
@@ -47,6 +61,25 @@ pub struct FileReadOptions<'a, 'input, 'b, 'c> {
 
     /// The path to the target file on the in-game computer
     pub target: &'c str
+}
+impl<'a, 'input, 'b, 'c> Default for FileReadOptions<'a, 'input, 'b, 'c> {
+    /// The default [FileReadOptions] is to open the last-used account's save file, and read a file from the player's in-game computer.
+    ///
+    /// **Note**: the default value of `target` is the empty string, which is unlikely to be a valid file path. You almost certainly
+    /// want to set `target` explicitly, and only populate other fields using [Default]. For example:
+    /// ```
+    /// use hn_decypher::save_read::FileReadOptions;
+    ///
+    /// let options = FileReadOptions{target:"some/interesting/file.dec", ..Default::default()};
+    /// ```
+    //Ideally we would just derive Default, but since we want to have the above note on specifying the path, we have to write it manually
+    fn default() -> Self {
+        FileReadOptions {
+            save: Default::default(),
+            computer: Default::default(),
+            target: Default::default()
+        }
+    }
 }
 
 #[derive(Error, Debug)]
