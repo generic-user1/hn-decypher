@@ -2,6 +2,7 @@
 
 use crate::DEFAULT_PASSCODE;
 use crate::decrypt::{DecryptError, decrypt};
+use std::fmt::Display;
 use thiserror::Error;
 
 /// Items from the header of a .dec file
@@ -14,6 +15,22 @@ pub struct HeaderValues {
     pub header_msg: String,
     pub src_ip: String,
     pub file_extension: Option<String>
+}
+
+impl Display for HeaderValues {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Passcode: {}", self.passcode)?;
+        writeln!(f, "Message: \"{}\"", self.header_msg)?;
+        writeln!(f, "Source IP: \"{}\"", self.src_ip)?;
+        writeln!(
+            f,
+            "Original File Extension: {}",
+            self.file_extension
+                .as_ref()
+                .map(|s| format!("\"{}\"", s))
+                .unwrap_or_else(|| "None".to_owned())
+        )
+    }
 }
 
 /// Reasons decrypting headers can fail
