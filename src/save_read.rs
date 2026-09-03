@@ -97,7 +97,7 @@ pub enum ReadFileFromSaveError {
     ComputerError(#[from] save_file::ComputerError),
 
     #[error("file with specified path not found on target computer")]
-    FileNotFound
+    InGameFileNotFound
 }
 
 /// Read an in-game file from an in-game computer by reading an XML save file.
@@ -131,7 +131,7 @@ pub fn read_file_from_save(options: FileReadOptions) -> Result<String, ReadFileF
     let computer = save_file::Computer::try_new(&parsed, options.computer)?;
     computer
         .file_content(options.target)
-        .ok_or(ReadFileFromSaveError::FileNotFound)
+        .ok_or(ReadFileFromSaveError::InGameFileNotFound)
         .map(|c| c.to_owned())
 }
 
