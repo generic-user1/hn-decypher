@@ -19,7 +19,15 @@ fn main() -> Result<(), HnDecypherError> {
         OutputBehavior::DecryptQuiet => decypher_str(&input)?.body,
         OutputBehavior::DecryptWithHeaders => {
             let decyphered = decypher_str(&input)?;
-            print!("{}", decyphered.header_values);
+            print!(
+                "{}{}",
+                decyphered.header_values,
+                if common_args.output_path.is_none() {
+                    "\n"
+                } else {
+                    ""
+                }
+            );
             decyphered.body
         }
     };
