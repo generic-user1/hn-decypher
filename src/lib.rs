@@ -5,6 +5,7 @@ pub const DEFAULT_PASSCODE: u16 = 4065;
 
 pub mod decrypt;
 pub mod headers;
+#[cfg(feature = "save_read")]
 pub mod save_read;
 
 #[derive(Error, Debug, Clone)]
